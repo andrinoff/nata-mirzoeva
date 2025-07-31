@@ -1,20 +1,13 @@
 document.addEventListener("DOMContentLoaded", () => {
   // =========================================================================
   // --- ⬇️ START OF CONFIGURATION ⬇️ ---
-
-  // 1. GITHUB USERNAME: Replace 'your-github-username' with your actual GitHub username.
   const GITHUB_USERNAME = "andrinoff";
-
-  // 2. GITHUB REPOSITORY: Replace 'your-repository-name' with the name of your repository.
   const GITHUB_REPONAME = "nata-mirzoeva";
-
-  // 3. PHOTOS DIRECTORY: This should match the path in your repository.
   const PHOTOS_PATH = "assets/photos";
-
   // --- ⬆️ END OF CONFIGURATION ⬆️ ---
   // =========================================================================
 
-  const portfolioGrid = document.getElementById("portfolio-grid");
+  const portfolioContainer = document.getElementById("portfolio-container");
 
   // Create and append the modal to the body
   const modal = document.createElement("div");
@@ -30,13 +23,10 @@ document.addEventListener("DOMContentLoaded", () => {
   modal.appendChild(modalImg);
   document.body.appendChild(modal);
 
-  // When the user clicks on <span> (x), close the modal
-  closeBtn.onclick = function () {
+  closeBtn.onclick = () => {
     modal.style.display = "none";
   };
-
-  // When the user clicks anywhere outside of the modal, close it
-  window.onclick = function (event) {
+  window.onclick = (event) => {
     if (event.target == modal) {
       modal.style.display = "none";
     }
@@ -54,67 +44,105 @@ document.addEventListener("DOMContentLoaded", () => {
       const photoshoots = data.filter((item) => item.type === "dir");
 
       if (photoshoots.length === 0) {
-        portfolioGrid.innerHTML = `<p>No photo galleries found. Make sure you've created folders inside the '${PHOTOS_PATH}' directory in your GitHub repository.</p>`;
+        portfolioContainer.innerHTML = `<p>No photo galleries found. Make sure you've created folders inside the '${PHOTOS_PATH}' directory.</p>`;
         return;
       }
 
-      portfolioGrid.innerHTML = ""; // Clear the "Loading..." message
+      portfolioContainer.innerHTML = ""; // Clear "Loading..."
 
       for (const photoshoot of photoshoots) {
-        createGalleryFor(photoshoot);
+        createCarouselFor(photoshoot);
       }
     } catch (error) {
       console.error("Failed to fetch photoshoots:", error);
-      portfolioGrid.innerHTML = `<p class="error">Error loading portfolio. Please check your username and repository name in <code>script.js</code> and ensure the repository is public.</p>`;
+      portfolioContainer.innerHTML = `<p class="error">Error loading portfolio. Please check your config in <code>script.js</code>.</p>`;
     }
   }
 
-  async function createGalleryFor(photoshoot) {
-    const galleryContainer = document.createElement("section");
-    galleryContainer.className = "photoshoot-gallery";
+  async function createCarouselFor(photoshoot) {
+    const gallerySection = document.createElement("section");
+    gallerySection.className = "photoshoot-gallery";
 
     const titleName = photoshoot.name.replace(/-/g, " ").replace(/_/g, " ");
-    galleryContainer.innerHTML = `<h3>${titleName}</h3>`;
 
-    const imageGrid = document.createElement("div");
-    imageGrid.className = "image-grid";
-    galleryContainer.appendChild(imageGrid);
-    portfolioGrid.appendChild(galleryContainer);
+    gallerySection.innerHTML = `
+      <div class="gallery-header">
+        <h3>${titleName}</h3>
+      </div>
+      <div class="carousel-container">
+        <button class="carousel-button prev">&lt;</button>
+        <div class="carousel-track"></div>
+        <button class="carousel-button next">&gt;</button>
+      </div>
+    `;
+
+    portfolioContainer.appendChild(gallerySection);
+
+    const carouselTrack = gallerySection.querySelector(".carousel-track");
+    const prevButton = gallerySection.querySelector(".carousel-button.prev");
+    const nextButton = gallerySection.querySelector(".carousel-button.next");
 
     try {
       const imagesResponse = await fetch(photoshoot.url);
       if (!imagesResponse.ok)
-        throw new Error(
-          `Network response was not ok: ${imagesResponse.statusText}`
-        );
+        throw new Error(`Fetch failed: ${imagesResponse.statusText}`);
       const images = await imagesResponse.json();
-
       const imageFiles = images.filter(
         (file) =>
           file.type === "file" && /\.(jpe?g|png|gif|webp)$/i.test(file.name)
       );
 
       if (imageFiles.length === 0) {
-        imageGrid.innerHTML = `<p>No images found in this gallery.</p>`;
+        carouselTrack.innerHTML = `<p>No images found in this gallery.</p>`;
       } else {
         imageFiles.forEach((imageFile) => {
+          const carouselItem = document.createElement("div");
+          carouselItem.className = "carousel-item";
           const img = document.createElement("img");
           img.src = imageFile.download_url;
           img.alt = imageFile.name;
-          img.loading = "lazy"; // Lazy load images for better performance
-          imageGrid.appendChild(img);
+          img.loading = "lazy";
 
-          // Add click event to open the modal
           img.onclick = function () {
             modal.style.display = "block";
             modalImg.src = this.src;
           };
+
+          carouselItem.appendChild(img);
+          carouselTrack.appendChild(carouselItem);
         });
+
+        // UPDATED: Check for overflow and show buttons if needed
+        setTimeout(() => {
+          const isOverflowing =
+            carouselTrack.scrollWidth > carouselTrack.clientWidth;
+          if (isOverflowing) {
+            prevButton.style.display = "block";
+            nextButton.style.display = "block";
+          }
+        }, 500); // Delay to allow images to render
       }
     } catch (error) {
       console.error(`Failed to fetch images for ${photoshoot.name}:`, error);
-      imageGrid.innerHTML = `<p>Error loading this gallery.</p>`;
+      carouselTrack.innerHTML = `<p>Error loading this gallery.</p>`;
     }
+
+    let currentIndex = 0;
+    prevButton.addEventListener("click", () => {
+      const itemWidth =
+        carouselTrack.querySelector(".carousel-item").clientWidth + 24;
+      carouselTrack.style.transform = `translateX(-${
+        itemWidth * --currentIndex
+      }px)`;
+    });
+
+    nextButton.addEventListener("click", () => {
+      const itemWidth =
+        carouselTrack.querySelector(".carousel-item").clientWidth + 24;
+      carouselTrack.style.transform = `translateX(-${
+        itemWidth * ++currentIndex
+      }px)`;
+    });
   }
 
   fetchFromGitHub();
