@@ -1,10 +1,9 @@
 /assets/ @nata-mirzoeva-github
 
-# andrinoff is the owner of the website source code and configuration files.
 
-_.html @andrinoff
-_.css @andrinoff
-\*.js @andrinoff
+*.html @andrinoff
+*.css @andrinoff
+*.js @andrinoff
 CNAME @andrinoff
 LICENSE.md @andrinoff
 CODEOWNERS @andrinoff
