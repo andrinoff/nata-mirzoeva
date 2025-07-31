@@ -16,6 +16,32 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const portfolioGrid = document.getElementById("portfolio-grid");
 
+  // Create and append the modal to the body
+  const modal = document.createElement("div");
+  modal.id = "image-modal";
+  modal.classList.add("modal");
+  const modalImg = document.createElement("img");
+  modalImg.classList.add("modal-content");
+  modalImg.id = "modal-image";
+  const closeBtn = document.createElement("span");
+  closeBtn.classList.add("close-button");
+  closeBtn.innerHTML = "&times;";
+  modal.appendChild(closeBtn);
+  modal.appendChild(modalImg);
+  document.body.appendChild(modal);
+
+  // When the user clicks on <span> (x), close the modal
+  closeBtn.onclick = function () {
+    modal.style.display = "none";
+  };
+
+  // When the user clicks anywhere outside of the modal, close it
+  window.onclick = function (event) {
+    if (event.target == modal) {
+      modal.style.display = "none";
+    }
+  };
+
   async function fetchFromGitHub() {
     const apiUrl = `https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPONAME}/contents/${PHOTOS_PATH}`;
 
@@ -77,6 +103,12 @@ document.addEventListener("DOMContentLoaded", () => {
           img.alt = imageFile.name;
           img.loading = "lazy"; // Lazy load images for better performance
           imageGrid.appendChild(img);
+
+          // Add click event to open the modal
+          img.onclick = function () {
+            modal.style.display = "block";
+            modalImg.src = this.src;
+          };
         });
       }
     } catch (error) {
